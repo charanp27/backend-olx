@@ -1,0 +1,241 @@
+from django.shortcuts import render
+from rest_framework import generics
+from .models import  Product, Brand, Category, yearlyProducts, AreaWiseProduct,Wishlist
+from django.contrib.auth.models import User
+from .serializers import UserSerializer, ProductSerializer, BrandSerializer, CategorySerializer, yearlyProductsSerializer, AreaWiseProductSerializer, WishlistSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from rest_framework import filters
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from .serializers import UserSerializer
+from django.contrib.auth import authenticate
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import permission_classes
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import RegisterSerializer
+from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+# Custom Token Obtain Pair View
+class CustomTokenObtainPairView(TokenObtainPairView):
+    pass  # Optionally customize response if needed
+
+# Register View
+class RegisterView(APIView):
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "User registered successfully!"}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+# Logout View
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"message": "Logout successful!"}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class RegisterView(generics.CreateAPIView):
+#     queryset = User.objects.all()
+#     permission_classes = (AllowAny,)
+#     serializer_class = RegistrationSerializer
+
+# class LoginView(APIView):
+#     permission_classes = (AllowAny,)
+
+#     def post(self, request):
+#         serializer = LoginSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+
+#         user = authenticate(
+#             username=serializer.validated_data['username'],
+#             password=serializer.validated_data['password']
+#         )
+
+#         if user:
+#             return Response({'token': user.auth_token.key}, status=status.HTTP_200_OK)
+#         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+# class UserView(APIView):
+#     permission_classes = (IsAuthenticated,)
+
+#     def get(self, request):
+#         user = request.user
+#         serializer = UserSerializer(user)
+#         return Response(serializer.data)
+class UserView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
+
+class LogoutView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
+# class UserList(generics.ListCreateAPIView):
+#     queryset=User.objects.all()
+#     serializer_class = UserSerializer
+
+# class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+#     queryset=User.objects.all()
+#     serializer_class = UserSerializer
+# class UserProfileList(generics.ListCreateAPIView):
+#     queryset = UserProfile.objects.all()
+#     serializer_class = UserProfileSerializer
+
+# class UserProfileDetail(generics.RetrieveUpdateDestroyAPIView):
+#     queryset = UserProfile.objects.all()
+#     serializer_class = UserProfileSerializer
+
+
+class BrandList(generics.ListCreateAPIView):
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+
+class BrandDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Brand.objects.all()
+    serializer_class = BrandSerializer
+
+class CategoryList(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+   
+
+class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+
+class ProductList(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    # filter_backends = [DjangoFilterBackend]
+    # filterset_fields = ['category']
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['category'] 
+
+class ProductDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+
+    
+
+class YearlyProductsList(generics.ListCreateAPIView):
+    queryset = yearlyProducts.objects.all()
+    serializer_class = yearlyProductsSerializer
+
+class YearlyProductsDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = yearlyProducts.objects.all()
+    serializer_class = yearlyProductsSerializer
+
+class AreaWiseList(generics.ListCreateAPIView):
+    queryset = AreaWiseProduct.objects.all()
+    serializer_class = AreaWiseProductSerializer
+
+class AreaWiseDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = AreaWiseProduct.objects.all()
+    serializer_class = AreaWiseProductSerializer
+
+# Create your views here.
+# class WishlistCreateView(APIView):
+#     def post(self, request):
+#         # Example: Create a wishlist with a name (optional)
+#         wishlist = Wishlist.objects.create(name="My First Wishlist") 
+
+#         # Example: Add some products to the wishlist
+#         product1 = Product.objects.get(pk=1)  # Replace with actual product IDs
+#         product2 = Product.objects.get(pk=2)
+#         wishlist.products.add(product1, product2) 
+
+#         serializer = WishlistSerializer(wishlist)
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+# class WishlistListView(generics.ListAPIView):
+#     queryset = Wishlist.objects.all()
+#     serializer_class = WishlistSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from .models import Product, Wishlist
+from .serializers import WishlistSerializer
+
+class WishlistView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+        serializer = WishlistSerializer(wishlist)
+        return Response(serializer.data)
+
+    def post(self, request):
+        product_id = request.data.get('product_id')
+        try:
+            product = Product.objects.get(id=product_id)
+            wishlist, _ = Wishlist.objects.get_or_create(user=request.user)
+            wishlist.products.add(product)
+            return Response({'message': 'Product added to wishlist'})
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found'}, status=404)
+
+    def delete(self, request):
+        product_id = request.data.get('product_id')
+        try:
+            product = Product.objects.get(id=product_id)
+            wishlist = Wishlist.objects.get(user=request.user)
+            wishlist.products.remove(product)
+            return Response({'message': 'Product removed from wishlist'})
+        except (Product.DoesNotExist, Wishlist.DoesNotExist):
+            return Response({'error': 'Product not found or not in wishlist'}, status=404)
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.tokens import AccessToken
+
+# @api_view(['POST'])
+# def validate_token(request):
+#     try:
+#         # Check if the Authorization header is provided
+#         token = request.headers.get('Authorization')
+
+#         if token:
+#             # Remove 'Bearer ' from the token string
+#             token = token.split(' ')[1]
+
+#             # Verify the token
+#             access_token = AccessToken(token)
+
+#             # If token is valid, return success message
+#             return Response({'message': 'Token is valid.'}, status=status.HTTP_200_OK)
+#         else:
+#             return Response({'error': 'Token is missing.'}, status=status.HTTP_400_BAD_REQUEST)
+
+#     except Exception as e:
+#         return Response({'error': str(e)}, status=status.HTTP_401_UNAUTHORIZED)
+
+def like_product(request, product_id):
+    if request.method == 'POST':
+        product = get_object_or_404(Product, id=product_id)
+        product.likes += 1
+        product.save()
+        return JsonResponse({'message': 'Like added', 'likes': product.likes})
+    else:
+        return JsonResponse({'error': 'Invalid HTTP method'}, status=405)
